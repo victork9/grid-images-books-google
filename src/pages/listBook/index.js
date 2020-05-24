@@ -3,73 +3,99 @@ import { View, FlatList, StyleSheet, TouchableOpacity,  Image, Dimensions,  } fr
 import api from '../../../services/api'
 import { Entypo } from '@expo/vector-icons';
 
-
+const numColumns = 3;
 export default function ListBook() {
 
     const [books, setBooks] = useState([])
 
-    async function getListInformations() {
+  async function getListInformations() {
 
-        try {
-            const response = await api.get('https://www.googleapis.com/books/v1/volumes?q=SEARCH_TERM')
+    try {
+      const response = await api.get('https://www.googleapis.com/books/v1/volumes?q=SEARCH_TERM')
 
+      await setBooks(response.data.items)
+       console.log(books.length)
+    } catch (error) {
+    }
+  }
 
-            await setBooks([response.data])
-        } catch (error) {
-        }
+  useEffect(() => {
+    getListInformations()
+
+  }, [])
+
+ 
+
+  const formatData = (data, numColumns) => {
+
+    const numberOfFullRows = Math.floor(data.length / numColumns);
+
+    let numberOfElementsLastRow = data.length - (numberOfFullRows * numColumns);
+    while (numberOfElementsLastRow !== numColumns && numberOfElementsLastRow !== 0) {
+      books.push({
+        "volumeInfo": {
+          "imageLinks": {
+            "smallThumbnail": "",
+            "thumbnail": ""
+          },
+        }, empty: true
+      });
+      numberOfElementsLastRow++;
+      
     }
 
-    function renderItem({ item, index }) {
+    return data;
+  };
 
+  function renderItem({ item, index }) {
+     console.log(item.empty )
 
-
+    if (item.empty === true) {
+      return <View style={[styles.item, styles.itemInvisible]} />;
+    }
+ 
         return (
 
-            item.items.map((item2, index) => {
-                return (
-                    
-                        <View style={styles.container}>
-                            <TouchableOpacity key={index} >
-                                <Image style={styles.item} source={{ uri: item2.volumeInfo.imageLinks.thumbnail }} />
-                            </TouchableOpacity>
-                        </View>
-                    
-                )
-            }))
+          <View style={styles.container}>
+            <TouchableOpacity key={index} >
+              <Image resizeMode="stretch" style={styles.item} source={{ uri: item.volumeInfo.imageLinks.thumbnail }} />
+            </TouchableOpacity>
+          </View>
+
+        )
+  };
 
 
-    }
-
-
-    useEffect(() => {
-        getListInformations()
-
-    }, [])
-    return (
-
-       
-            <FlatList
-                numColumns={3}
-                renderItem={renderItem}
-                data={books}
-                onEndReachedThreshold={0.2}
-                keyExtractor={(index) => { return index }}
-            />
-        
-
-    )
+  return (
+    <FlatList
+      data={formatData(books, numColumns)}
+      style={styles.container}
+      renderItem={renderItem}
+      numColumns={numColumns}
+    />
+  );
 }
 
+
 const styles = StyleSheet.create({
-
-    container: {
-        
-        flex: 1,
-        marginVertical: 40,
-    },
-    item: {
-        width: Dimensions.get('window').width / 3,
-        height: Dimensions.get('window').width / 3,
-    },
-
+  container: {
+    backgroundColor: '#4D243D',
+    flex: 1,
+   
+  },
+  item: {
+    backgroundColor: '#4D243D',
+    width: 150,
+    alignItems:'center',
+    justifyContent: 'center',
+    flex: 1,
+    margin: 5,
+    height: Dimensions.get('window').width / numColumns, // approximate a square
+  },
+  itemInvisible: {
+    backgroundColor: 'transparent',
+  },
+  itemText: {
+    color: '#fff',
+  },
 });
